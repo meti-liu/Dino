@@ -8,11 +8,18 @@ const int width = 896;//地图长宽
 const int height = 512;
 unsigned long lasttime = 0;//我们尝试通过一个计时器来逐渐增加新的仙人掌
 IMAGE img_dino1, img_dino2;//左右脚的恐龙，两张图片
+IMAGE img_dinojump, img_ducking1, img_ducking2;//跳跃恐龙，空中脚不动
+//蹲下恐龙，脚会动
 IMAGE img_background;
 IMAGE img_cac1, img_cac2, img_cac3, img_cac4, img_cac5, img_cac6;//六张不同的仙人掌图片
 int dino_index;//有两张恐龙图片，循环播放，这里记录下标
 
-
+//to be done
+//1.速度加快，难度递增
+//2.ducking相关动作
+//3.云和鸟
+//4.碰撞检测
+//5.
 
 
 #pragma comment(lib,"MSIMG32.LIB")//windows自带的一个处理
@@ -58,19 +65,29 @@ class Dino
 public:
 	float x, y;
 	float vy, g;
-	bool Jumping;
+	bool Jumping=false;//检测是否在跳跃
+	bool Ducking=false;//检测是否在俯下身子或空中俯冲
 	Dino(float x, float y, float vy, float g) :x(x),y(y),vy(vy),g(g){}//构造函数，数据初始化
 	void draw()
 	{
-		if(dino_index==0) putimage1(x, y, &img_dino1);//左脚在下
-		if (dino_index == 1) putimage1(x, y, &img_dino2);//右脚在下
+		if (Jumping) putimage1(x, y, &img_dinojump);
+		else if (Ducking)
+		{
+			if (dino_index == 0) putimage1(x, y+30, &img_ducking1);//左脚在下
+			if (dino_index == 1) putimage1(x, y+30, &img_ducking2);//右脚在下
+		}
+		else
+		{
+			if (dino_index == 0) putimage1(x, y, &img_dino1);//左脚在下
+			if (dino_index == 1) putimage1(x, y, &img_dino2);//右脚在下
+		}
 
 	}
 	void StartJump()
 	{
 		if (Jumping == false)
 		{
-			vy = -45;//y方向初速度向上
+			vy = -40;//y方向初速度向上
 			Jumping = true;
 		}
 	}
@@ -90,6 +107,17 @@ public:
 		}
 
 	}
+
+	void StartDuck()
+	{
+		if (Jumping) vy += 35;
+		else Ducking = true;
+	}
+
+	void StopDuck()
+	{
+		Ducking = false;
+	}
 };
 
 //初始化：加载图片
@@ -98,6 +126,9 @@ void startup()
 	loadimage(&img_background, _T("img/background.png"));//背景图片加载
 	loadimage(&img_dino1, _T("img/DinoRun1.png"));//
 	loadimage(&img_dino2, _T("img/DinoRun2.png"));
+	loadimage(&img_dinojump, _T("img/DinoJump.png"));
+	loadimage(&img_ducking1, _T("img/DinoDuck1.png"));
+	loadimage(&img_ducking2, _T("img/DinoDuck2.png"));
 	loadimage(&img_cac1, _T("img/LargeCactus1.png"));
 	loadimage(&img_cac2, _T("img/LargeCactus2.png"));
 	loadimage(&img_cac3, _T("img/LargeCactus3.png"));
@@ -107,22 +138,31 @@ void startup()
 
 }
 vector<Cactus> cactus;
-void AddCac()//添加水果的函数，搭配计时器使用
-{
-	unsigned long currenttime = GetTickCount();//搭配最初定义的lasttime使用
-	const unsigned long Cac_interval = 5000;//5000毫秒，5s
-	if (currenttime - lasttime > Cac_interval)
-	{
-		int Cactype= rand() % 6 + 1;//rand()%3就是随机0或12345，这里用于六选一随机生成一个仙人掌
-		cactus.push_back(Cactus(width,height-240,7,Cactype));//在vector中添加一个随机仙人掌
-		//并且附上初始值，这里的7就是水平方向速度
+
+//我们在新建仙人掌的部分设计了两个自由度
+//1.随机数1从六种仙人掌中随机选一个
+//2.随机数2保证每次生成新仙人掌的时间间隔不确定，表现在游戏中就是每两个仙人掌之间的距离不总是定值
+void AddCac() {
+	static unsigned long Cac_interval = 5000; // 初始默认间隔5000ms,5s
+	unsigned long currenttime = GetTickCount();
+
+	if (currenttime - lasttime > Cac_interval) {
+		int a[3] = { 5000, 2500, 4000 };
+		int r0 = rand() % 3;
+		Cac_interval = a[r0]; // 更新下一个间隔时间
+
+		cout << "Current interval: " << Cac_interval << " milliseconds" << endl;
+
+		int Cactype = rand() % 6 + 1;
+		cactus.push_back(Cactus(width, height - 240, 10, Cactype));
 		lasttime = currenttime;
 	}
-
 }
+
 int main()
 {
 	srand(static_cast<unsigned int>(time(0)));//搭配rand使用，让每次随机不一样
+	//我们用static静态声明，这样不会每次调用函数都间隔都是5s，从而实现随机数应有的效果
 	ExMessage msg;//
 	startup();
 	initgraph(width, height);//跑酷窗口
@@ -141,6 +181,14 @@ int main()
 				{
 					dino1.StartJump();
 				}
+				else if (msg.vkcode == VK_DOWN)
+				{
+					dino1.StartDuck();
+				}
+			}
+			else if (msg.message == WM_KEYUP)
+			{
+				if (msg.vkcode == VK_DOWN) dino1.StopDuck();
 			}
 		}
 
