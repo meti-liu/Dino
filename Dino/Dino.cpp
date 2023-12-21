@@ -2,10 +2,11 @@
 #include<iostream>
 #include<conio.h>
 using namespace std;
-const int width = 1792;//地图长宽
-const int height = 1024;
+const int width = 896;//地图长宽
+const int height = 512;
 IMAGE img_dino1, img_dino2, img_dino3;//三个不同颜色的恐龙
 IMAGE img_background;
+int dino_index;//有两张恐龙图片，循环播放，这里记录下标
 
 #pragma comment(lib,"MSIMG32.LIB")//windows自带的一个处理
 inline void putimage1(int x, int y, IMAGE* img)//直接使用putimage函数的话
@@ -30,39 +31,79 @@ class Dino
 public:
 	float x, y;
 	float vy, g;
+	bool Jumping;
 	Dino(float x, float y, float vy, float g) :x(x),y(y),vy(vy),g(g){}
 	void draw()
 	{
-		putimage1(x, y, &img_dino1);
+		if(dino_index==0) putimage1(x, y, &img_dino1);
+		if (dino_index == 1) putimage1(x, y, &img_dino2);
+
 	}
-	void update()//物理运动的更新
+	void StartJump()
 	{
-		vy += g;
-		y += vy;
-		if (y > height) vy = -vy;
+		if (Jumping == false)
+		{
+			vy = -40;
+			Jumping = true;
+		}
+	}
+
+	void jump()//物理运动的更新
+	{
+		if (Jumping)
+		{
+			vy += g;
+			y += vy;
+			if (y > height - 240)
+			{
+				y = height - 240;//保持在地面上
+				vy = 0;//停止下落
+				Jumping = false;
+			}
+		}
+
 	}
 };
 void startup()
 {
 	loadimage(&img_background, _T("img/background.png"));//背景图片加载
-	loadimage(&img_dino1, _T("img/dino1.png"));//
-	loadimage(&img_dino2, _T("img/dino2.png"));
+	loadimage(&img_dino1, _T("img/DinoRun1.png"));//
+	loadimage(&img_dino2, _T("img/DinoRun2.png"));
 	loadimage(&img_dino3, _T("img/dino3.png"));
 }
 int main()
 {
+	ExMessage msg;//
 	startup();
 	initgraph(width, height);//跑酷窗口
 	BeginBatchDraw();//双缓冲
-	Dino dino1(200, height-400, -20, 5);
+	Dino dino1(200, height-240, 0, 5);
 	while (true)//后续改为！End
 	{
+		while (peekmessage(&msg))//信息输出，上箭头（或space）和下箭头
+		{
+			if (msg.message == WM_KEYDOWN)
+			{
+				if (msg.vkcode == VK_SPACE || msg.vkcode == VK_UP)
+				{
+					dino1.StartJump();
+				}
+			}
+		}
+		static int counter;//使用一个计数器，用于图片循环播放
+		if (++counter % 5 == 0)//每5帧，切换一个恐龙（假设一次循环是一帧）
+		{
+			dino_index++;
+		}
+		dino_index = dino_index % 2;//一共就两张图，这里取模循环
+
+
 		cleardevice();
 		putimage(0, 0, &img_background);//背景图片渲染
 		dino1.draw();
-		dino1.update();
+		dino1.jump();
 		FlushBatchDraw();
-		Sleep(20);
+		Sleep(30);
 	}
 	EndBatchDraw();
 	closegraph();
