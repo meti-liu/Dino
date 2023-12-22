@@ -4,22 +4,28 @@
 #include<vector>//采用动态数组来管理持续增加的cactus，cloud或bird
 #include<ctime>//用于随机数生成
 using namespace std;
+
 const int width = 896;//地图长宽
 const int height = 512;
-unsigned long lasttime = 0;//我们尝试通过一个计时器来逐渐增加新的仙人掌
+
+unsigned long lastcactime = 0;//我们尝试通过一个计时器来逐渐增加新的仙人掌
+unsigned long lastbirdtime = 0;//我们尝试通过一个计时器来逐渐增加新的鸟
+
 IMAGE img_dino1, img_dino2;//左右脚的恐龙，两张图片
 IMAGE img_dinojump, img_ducking1, img_ducking2;//跳跃恐龙，空中脚不动
 //蹲下恐龙，脚会动
 IMAGE img_background;
 IMAGE img_cac1, img_cac2, img_cac3, img_cac4, img_cac5, img_cac6;//六张不同的仙人掌图片
-int dino_index;//有两张恐龙图片，循环播放，这里记录下标
+IMAGE img_bird1, img_bird2;
 
+int dino_index;//有两张恐龙图片，循环播放，这里记录下标
+int bird_index;//实现鸟的翅膀扇动，循环播放
 //to be done
 //1.速度加快，难度递增
-//2.ducking相关动作
+//
 //3.云和鸟
 //4.碰撞检测
-//5.
+//5.生命值，三条血
 
 
 #pragma comment(lib,"MSIMG32.LIB")//windows自带的一个处理
@@ -48,8 +54,8 @@ public:
 		case 1:putimage1(x, y, &img_cac1); break;
 		case 2:putimage1(x, y, &img_cac2); break;
 		case 3:putimage1(x, y, &img_cac3); break;
-		case 4:putimage1(x, y+20, &img_cac4); break;
-		case 5:putimage1(x, y+20, &img_cac5); break;
+		case 4:putimage1(x, y+20, &img_cac4); break;//因为加载图片是从x，y开始向右下角加载的
+		case 5:putimage1(x, y+20, &img_cac5); break;//所以+20是避免小仙人掌加载时悬在空中
 		case 6:putimage1(x, y+20, &img_cac6); break;
 		}
 	}
@@ -58,6 +64,29 @@ public:
 		x -= vx;
 	}
 };
+
+class Bird//逻辑与仙人掌类似
+{
+public:
+	float x, y;
+	float vx;
+	int Birdtype;//高鸟和低鸟
+	Bird() :x(0),y(0),vx(0),Birdtype(1){}
+	Bird(float x, float vx,int Birdtype) :x(x),vx(vx),Birdtype(Birdtype){}
+	void draw()
+	{
+		if (Birdtype == 1) y = height - 280;
+		else if (Birdtype == 2) y = height - 330;
+		if (bird_index == 0) putimage1(x, y, &img_bird1);//翅膀在下
+		if (bird_index == 1) putimage1(x, y, &img_bird2);//翅膀在上
+	}
+	void move()
+	{
+		x -= vx;
+	}
+};
+
+
 
 //恐龙类，竖直方向移动，水平方向不变
 class Dino
@@ -73,8 +102,9 @@ public:
 		if (Jumping) putimage1(x, y, &img_dinojump);
 		else if (Ducking)
 		{
-			if (dino_index == 0) putimage1(x, y+30, &img_ducking1);//左脚在下
-			if (dino_index == 1) putimage1(x, y+30, &img_ducking2);//右脚在下
+			if (dino_index == 0) putimage1(x, y+30, &img_ducking1);//与小仙人掌相同的问题
+			if (dino_index == 1) putimage1(x, y+30, &img_ducking2);//ducking的图片高度不够
+			//导致恐龙悬浮在空中，所以我们+30
 		}
 		else
 		{
@@ -135,18 +165,22 @@ void startup()
 	loadimage(&img_cac4, _T("img/SmallCactus1.png"));
 	loadimage(&img_cac5, _T("img/SmallCactus2.png"));
 	loadimage(&img_cac6, _T("img/SmallCactus3.png"));
+	loadimage(&img_bird1, _T("img/Bird1.png"));
+	loadimage(&img_bird2, _T("img/Bird2.png"));
 
 }
 vector<Cactus> cactus;
-
+vector<Bird> bird;
 //我们在新建仙人掌的部分设计了两个自由度
 //1.随机数1从六种仙人掌中随机选一个
 //2.随机数2保证每次生成新仙人掌的时间间隔不确定，表现在游戏中就是每两个仙人掌之间的距离不总是定值
-void AddCac() {
+void AddCac() 
+{
 	static unsigned long Cac_interval = 5000; // 初始默认间隔5000ms,5s
 	unsigned long currenttime = GetTickCount();
 
-	if (currenttime - lasttime > Cac_interval) {
+	if (currenttime - lastcactime > Cac_interval)
+	{
 		int a[3] = { 5000, 2500, 4000 };
 		int r0 = rand() % 3;
 		Cac_interval = a[r0]; // 更新下一个间隔时间
@@ -155,7 +189,25 @@ void AddCac() {
 
 		int Cactype = rand() % 6 + 1;
 		cactus.push_back(Cactus(width, height - 240, 10, Cactype));
-		lasttime = currenttime;
+		lastcactime = currenttime;
+	}
+}
+void AddBird()
+{
+	static unsigned long Bird_interval = 5000; // 初始默认间隔5000ms,5s
+	unsigned long currenttime = GetTickCount();
+
+	if (currenttime - lastbirdtime > Bird_interval)
+	{
+		int b[3] = { 5000, 6000, 4000 };
+		int r1 = rand() % 3;
+		Bird_interval = b[r1]; // 更新下一个间隔时间
+
+		cout << "Current interval: " << Bird_interval << " milliseconds" << endl;
+
+		int Birdtype = rand() % 2 + 1;
+		bird.push_back(Bird(width, 15, Birdtype));
+		lastbirdtime = currenttime;
 	}
 }
 
@@ -172,7 +224,9 @@ int main()
 	while (true)//后续改为！End
 	{
 		AddCac();
-
+		AddBird();
+		static int Score = 0;
+		Score++;
 		while (peekmessage(&msg))//信息输出，上箭头（或space）和下箭头
 		{
 			if (msg.message == WM_KEYDOWN)
@@ -194,21 +248,40 @@ int main()
 
 
 		static int counter1;//使用一个计数器，用于图片循环播放
-		if (++counter1 % 5 == 0)//每5帧，切换一个恐龙（假设一次循环是一帧）
+		if (++counter1 % 3 == 0)//每3帧，切换一个恐龙（假设一次循环是一帧）
 		{
 			dino_index++;
 		}
 		dino_index = dino_index % 2;//一共就两张图，这里取模循环
 
+		static int counter2;//使用一个计数器，用于鸟图片循环播放
+		if (++counter2 % 5 == 0)//每3帧，切换一个鸟（假设一次循环是一帧）
+		{
+			bird_index++;
+		}
+		bird_index = bird_index % 2;//一共就两张图，这里取模循环
+
 
 		cleardevice();
 		putimage(0, 0, &img_background);//背景图片渲染
+		//计分板，直接把水果忍者的计分板搬过来了
+		settextcolor(WHITE);
+		settextstyle(25, 0, _T("宋体"));
+		TCHAR scoreStr[20];
+		_stprintf_s(scoreStr, _T("得分: %d"), Score/5);
+		outtextxy(10, 10, scoreStr);
+
 		dino1.draw();
 		dino1.jump();
 		for (auto& c : cactus)
 		{
 			c.draw();
 			c.move();
+		}
+		for (auto& b : bird)
+		{
+			b.draw();
+			b.move();
 		}
 		FlushBatchDraw();
 		Sleep(30);
