@@ -3,10 +3,25 @@
 #include<conio.h>
 #include<vector>//采用动态数组来管理持续增加的cactus，cloud或bird
 #include<ctime>//用于随机数生成
-using namespace std;
 
+#pragma comment(lib,"winmm.lib")
+
+using namespace std;
+int bird_speed = 20;
+int cac_speed = 15;//加速相关的几个速度参数
+int speed_increase = 4;
+int lastSpeedIncreaseScore = 0; // 新增一个变量，记录上次增加速度时的分数
 const int width = 896;//地图长宽
 const int height = 512;
+const int SlowStep = 4;
+const int FastStep = 2;
+const int SlowWing = 5;//我们把一些参数都设置为全局变量，这样后续微调的时候
+//只需要在最前面改就够了
+const int FastWing = 3;
+const float Score_Speed = 0.3;
+
+
+
 
 unsigned long lastcactime = 0;//我们尝试通过一个计时器来逐渐增加新的仙人掌
 unsigned long lastbirdtime = 0;//我们尝试通过一个计时器来逐渐增加新的鸟
@@ -17,7 +32,7 @@ IMAGE img_dinojump, img_ducking1, img_ducking2;//跳跃恐龙，空中脚不动
 IMAGE img_background;
 IMAGE img_cac1, img_cac2, img_cac3, img_cac4, img_cac5, img_cac6;//六张不同的仙人掌图片
 IMAGE img_bird1, img_bird2;
-
+bool End = false;//撞到仙人掌或鸟，game over
 int dino_index;//有两张恐龙图片，循环播放，这里记录下标
 int bird_index;//实现鸟的翅膀扇动，循环播放
 //to be done
@@ -44,8 +59,8 @@ public:
 	float x, y;
 	float vx;//相对运动，障碍物向左，这里vx应该是负的
 	int Cactype;
-	Cactus() : x(0), y(0), vx(0), Cactype(1) {}//先重载构造一个无参数的Cactus，否则vector的定义会报错
-	Cactus(float x,float y,float vx,int Cactype):x(x),y(y),vx(vx),Cactype(Cactype){}//构造函数+初始化仙人掌相关数据
+	Cactus() : x(0), y(0), Cactype(1) {}//先重载构造一个无参数的Cactus，否则vector的定义会报错
+	Cactus(float x, float y, int Cactype) :x(x), y(y), Cactype(Cactype) {}//构造函数+初始化仙人掌相关数据
 	//包括其xy坐标，移动速度vx，是哪种类型的仙人掌
 	void draw()
 	{
@@ -54,14 +69,14 @@ public:
 		case 1:putimage1(x, y, &img_cac1); break;
 		case 2:putimage1(x, y, &img_cac2); break;
 		case 3:putimage1(x, y, &img_cac3); break;
-		case 4:putimage1(x, y+20, &img_cac4); break;//因为加载图片是从x，y开始向右下角加载的
-		case 5:putimage1(x, y+20, &img_cac5); break;//所以+20是避免小仙人掌加载时悬在空中
-		case 6:putimage1(x, y+20, &img_cac6); break;
+		case 4:putimage1(x, y + 20, &img_cac4); break;//因为加载图片是从x，y开始向右下角加载的
+		case 5:putimage1(x, y + 20, &img_cac5); break;//所以+20是避免小仙人掌加载时悬在空中
+		case 6:putimage1(x, y + 20, &img_cac6); break;
 		}
 	}
 	void move()
 	{
-		x -= vx;
+		x -= cac_speed;
 	}
 };
 
@@ -71,8 +86,8 @@ public:
 	float x, y;
 	float vx;
 	int Birdtype;//高鸟和低鸟
-	Bird() :x(0),y(0),vx(0),Birdtype(1){}
-	Bird(float x, float vx,int Birdtype) :x(x),vx(vx),Birdtype(Birdtype){}
+	Bird() :x(0), Birdtype(1) {}
+	Bird(float x, int Birdtype) :x(x), Birdtype(Birdtype) {}
 	void draw()
 	{
 		if (Birdtype == 1) y = height - 280;
@@ -82,7 +97,7 @@ public:
 	}
 	void move()
 	{
-		x -= vx;
+		x -= bird_speed;
 	}
 };
 
@@ -94,16 +109,16 @@ class Dino
 public:
 	float x, y;
 	float vy, g;
-	bool Jumping=false;//检测是否在跳跃
-	bool Ducking=false;//检测是否在俯下身子或空中俯冲
-	Dino(float x, float y, float vy, float g) :x(x),y(y),vy(vy),g(g){}//构造函数，数据初始化
+	bool Jumping = false;//检测是否在跳跃
+	bool Ducking = false;//检测是否在俯下身子或空中俯冲
+	Dino(float x, float y, float vy, float g) :x(x), y(y), vy(vy), g(g) {}//构造函数，数据初始化
 	void draw()
 	{
 		if (Jumping) putimage1(x, y, &img_dinojump);
 		else if (Ducking)
 		{
-			if (dino_index == 0) putimage1(x, y+30, &img_ducking1);//与小仙人掌相同的问题
-			if (dino_index == 1) putimage1(x, y+30, &img_ducking2);//ducking的图片高度不够
+			if (dino_index == 0) putimage1(x, y + 30, &img_ducking1);//与小仙人掌相同的问题
+			if (dino_index == 1) putimage1(x, y + 30, &img_ducking2);//ducking的图片高度不够
 			//导致恐龙悬浮在空中，所以我们+30
 		}
 		else
@@ -168,27 +183,28 @@ void startup()
 	loadimage(&img_bird1, _T("img/Bird1.png"));
 	loadimage(&img_bird2, _T("img/Bird2.png"));
 
+
 }
 vector<Cactus> cactus;
 vector<Bird> bird;
 //我们在新建仙人掌的部分设计了两个自由度
 //1.随机数1从六种仙人掌中随机选一个
 //2.随机数2保证每次生成新仙人掌的时间间隔不确定，表现在游戏中就是每两个仙人掌之间的距离不总是定值
-void AddCac() 
+void AddCac()
 {
-	static unsigned long Cac_interval = 5000; // 初始默认间隔5000ms,5s
+	static unsigned long Cac_interval = 1500; // 初始默认间隔5000ms,5s
 	unsigned long currenttime = GetTickCount();
 
 	if (currenttime - lastcactime > Cac_interval)
 	{
-		int a[3] = { 5000, 2500, 4000 };
+		int a[3] = { 1500, 2500, 4000 };
 		int r0 = rand() % 3;
 		Cac_interval = a[r0]; // 更新下一个间隔时间
 
 		cout << "Current interval: " << Cac_interval << " milliseconds" << endl;
 
-		int Cactype = rand() % 6 + 1;
-		cactus.push_back(Cactus(width, height - 240, 10, Cactype));
+		int Cactype = rand() % 6 + 1;//随机数，六种仙人掌任选一个生成
+		cactus.push_back(Cactus(width, height - 240, Cactype));
 		lastcactime = currenttime;
 	}
 }
@@ -205,8 +221,8 @@ void AddBird()
 
 		cout << "Current interval: " << Bird_interval << " milliseconds" << endl;
 
-		int Birdtype = rand() % 2 + 1;
-		bird.push_back(Bird(width, 15, Birdtype));
+		int Birdtype = rand() % 2 + 1;//随机数，高鸟和矮鸟
+		bird.push_back(Bird(width, Birdtype));
 		lastbirdtime = currenttime;
 	}
 }
@@ -218,20 +234,26 @@ int main()
 	ExMessage msg;//
 	startup();
 	initgraph(width, height);//跑酷窗口
+	mciSendString(L"play music/Summer.mp3 repeat", 0, 0, 0);//播放音乐
+	//mciSendString(_T("play bgm repeat from 0"), NULL, 0, NULL);//循环播放
+
 	BeginBatchDraw();//双缓冲
-	Dino dino1(200, height-240, 0, 3.5);
+	Dino dino1(200, height - 240, 0, 3.5);
 
 	while (true)//后续改为！End
 	{
+
+
+
 		AddCac();
 		AddBird();
-		static int Score = 0;
-		Score++;
+		static float Score = 0;
+		Score += Score_Speed;//配合强制类型转换使用
 		while (peekmessage(&msg))//信息输出，上箭头（或space）和下箭头
 		{
 			if (msg.message == WM_KEYDOWN)
 			{
-				if (msg.vkcode == VK_SPACE || msg.vkcode == VK_UP)
+				if (msg.vkcode == VK_SPACE || msg.vkcode == VK_UP)//检测键盘的上键和空格键
 				{
 					dino1.StartJump();
 				}
@@ -248,18 +270,46 @@ int main()
 
 
 		static int counter1;//使用一个计数器，用于图片循环播放
-		if (++counter1 % 3 == 0)//每3帧，切换一个恐龙（假设一次循环是一帧）
+		if (static_cast<int>(Score) < 200)
 		{
-			dino_index++;
+			if (++counter1 % SlowStep == 0)//每3帧，切换一个恐龙（假设一次循环是一帧）
+			{
+				dino_index++;
+			}
+			dino_index = dino_index % 2;//一共就两张图，这里取模循环
 		}
-		dino_index = dino_index % 2;//一共就两张图，这里取模循环
+		else
+		{
+			if (++counter1 % FastStep == 0)//每3帧，切换一个恐龙（假设一次循环是一帧）
+			{
+				dino_index++;
+			}
+			dino_index = dino_index % 2;//一共就两张图，这里取模循环
+		}
+
+
+
+
+
+
 
 		static int counter2;//使用一个计数器，用于鸟图片循环播放
-		if (++counter2 % 5 == 0)//每3帧，切换一个鸟（假设一次循环是一帧）
+		if (static_cast<int>(Score) < 200)
 		{
-			bird_index++;
+			if (++counter2 % SlowWing == 0)//每3帧，切换一个鸟（假设一次循环是一帧）
+			{
+				bird_index++;
+			}
+			bird_index = bird_index % 2;//一共就两张图，这里取模循环
 		}
-		bird_index = bird_index % 2;//一共就两张图，这里取模循环
+		else
+		{
+			if (++counter2 % FastWing == 0)//每3帧，切换一个鸟（假设一次循环是一帧）
+			{
+				bird_index++;
+			}
+			bird_index = bird_index % 2;//一共就两张图，这里取模循环
+		}
 
 
 		cleardevice();
@@ -268,12 +318,17 @@ int main()
 		settextcolor(WHITE);
 		settextstyle(25, 0, _T("宋体"));
 		TCHAR scoreStr[20];
-		_stprintf_s(scoreStr, _T("得分: %d"), Score/5);
+		_stprintf_s(scoreStr, _T("得分: %d"), static_cast<int>(Score));
 		outtextxy(10, 10, scoreStr);
-
+		if (static_cast<int>(Score) > 50 + lastSpeedIncreaseScore)
+		{
+			cac_speed += speed_increase;
+			bird_speed += speed_increase;
+			lastSpeedIncreaseScore = static_cast<int>(Score);
+		}
 		dino1.draw();
 		dino1.jump();
-		for (auto& c : cactus)
+		for (auto& c : cactus)//一种新的for循环，用于遍历vector这类的动态数组
 		{
 			c.draw();
 			c.move();
