@@ -4,7 +4,7 @@
 #include<vector>//采用动态数组来管理持续增加的cactus，cloud或bird
 #include<ctime>//用于随机数生成
 
-//#pragma comment(lib,"winmm.lib")
+#pragma comment(lib,"winmm.lib")
 
 using namespace std;
 int bird_speed = 20;
@@ -169,19 +169,19 @@ public:
 void startup()
 {
 	loadimage(&img_background, _T("D:/game/lbr/Dino/img/background.png"));//背景图片加载
-	loadimage(&img_dino1, _T("img/DinoRun1.png"));//
-	loadimage(&img_dino2, _T("img/DinoRun2.png"));
-	loadimage(&img_dinojump, _T("img/DinoJump.png"));
-	loadimage(&img_ducking1, _T("img/DinoDuck1.png"));
-	loadimage(&img_ducking2, _T("img/DinoDuck2.png"));
-	loadimage(&img_cac1, _T("img/LargeCactus1.png"));
-	loadimage(&img_cac2, _T("img/LargeCactus2.png"));
-	loadimage(&img_cac3, _T("img/LargeCactus3.png"));
-	loadimage(&img_cac4, _T("img/SmallCactus1.png"));
-	loadimage(&img_cac5, _T("img/SmallCactus2.png"));
-	loadimage(&img_cac6, _T("img/SmallCactus3.png"));
-	loadimage(&img_bird1, _T("img/Bird1.png"));
-	loadimage(&img_bird2, _T("img/Bird2.png"));
+	loadimage(&img_dino1, _T("D:/game/lbr/Dino/img/DinoRun1.png"));//
+	loadimage(&img_dino2, _T("D:/game/lbr/Dino/img/DinoRun2.png"));
+	loadimage(&img_dinojump, _T("D:/game/lbr/Dino/img/DinoJump.png"));
+	loadimage(&img_ducking1, _T("D:/game/lbr/Dino/img/DinoDuck1.png"));
+	loadimage(&img_ducking2, _T("D:/game/lbr/Dino/img/DinoDuck2.png"));
+	loadimage(&img_cac1, _T("D:/game/lbr/Dino/img/LargeCactus1.png"));
+	loadimage(&img_cac2, _T("D:/game/lbr/Dino/img/LargeCactus2.png"));
+	loadimage(&img_cac3, _T("D:/game/lbr/Dino/img/LargeCactus3.png"));
+	loadimage(&img_cac4, _T("D:/game/lbr/Dino/img/SmallCactus1.png"));
+	loadimage(&img_cac5, _T("D:/game/lbr/Dino/img/SmallCactus2.png"));
+	loadimage(&img_cac6, _T("D:/game/lbr/Dino/img/SmallCactus3.png"));
+	loadimage(&img_bird1, _T("D:/game/lbr/Dino/img/Bird1.png"));
+	loadimage(&img_bird2, _T("D:/game/lbr/Dino/img/Bird2.png"));
 
 
 }
@@ -234,7 +234,7 @@ int main()
 	ExMessage msg;//
 	startup();
 	initgraph(width, height);//跑酷窗口
-	//mciSendString(L"play music/Summer.mp3 repeat", 0, 0, 0);//播放音乐
+	mciSendString(L"play D:/game/lbr/Dino/music/Summer.mp3 repeat", 0, 0, 0);//播放音乐
 	//mciSendString(_T("play bgm repeat from 0"), NULL, 0, NULL);//循环播放
 
 	BeginBatchDraw();//双缓冲
