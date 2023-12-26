@@ -3,6 +3,8 @@
 #include<conio.h>
 #include<vector>//采用动态数组来管理持续增加的cactus，cloud或bird
 #include<ctime>//用于随机数生成
+#include<map>//用于碰撞检测中的批量初始化
+#include<cmath>
 
 #pragma comment(lib,"winmm.lib")
 
@@ -76,7 +78,7 @@ public:
 	}
 	void move()
 	{
-		x -= cac_speed;
+		x -= cac_speed;//相对运动
 	}
 };
 
@@ -97,7 +99,8 @@ public:
 	}
 	void move()
 	{
-		x -= bird_speed;
+		x -= bird_speed;//相对运动，让障碍物向左运动
+		//看上去就像恐龙在向右运动
 	}
 };
 
@@ -141,7 +144,7 @@ public:
 	{
 		if (Jumping)
 		{
-			vy += g;
+			vy += g;//基本物理逻辑
 			y += vy;
 			if (y > height - 240)
 			{
@@ -155,7 +158,8 @@ public:
 
 	void StartDuck()
 	{
-		if (Jumping) vy += 35;
+		if (Jumping) vy += 35;//如果正在跳跃的过程中按下键，则加速下坠
+		//这时并不会蹲下
 		else Ducking = true;
 	}
 
@@ -227,6 +231,55 @@ void AddBird()
 	}
 }
 
+
+//这是碰撞检测，基本上是最难的部分
+//我们注意到恐龙的跳跃或者说它与仙人掌碰撞的临界坐标近似可以模拟成一个半圆
+//我们用半圆的思路去处理碰撞
+bool isCollidingWithCactus(int x_dino, int y_dino, int x_cac, int y_cac, int Cactype) {
+	// 定义不同仙人掌类型对应的半圆参数
+	struct SemiCircleParams 
+	{
+		int offset_x;
+		int offset_y;
+		int radius;
+	};
+
+	//6个仙人掌尺寸不同，因此碰撞参数不同
+	//dino与每一个仙人掌的碰撞参数都是不同的
+
+	map<int, SemiCircleParams> cactusParams = 
+	{
+		{1, {-15, 2, 65}}, // 为cac1碰撞半圆定义参数
+		{2, {10,2,85}},      // 为cac2碰撞半圆定义参数
+		{3, {10,2,85}},      
+		{4, {10,2,85}},      
+		{5, {10,2,85}},      
+		{6, {10,2,85}},      
+
+		// 以此类推，为其他仙人掌定义参数
+	};
+
+	// 获取当前仙人掌的半圆参数
+	SemiCircleParams params = cactusParams[Cactype];
+
+	// 计算半圆圆心的实际坐标
+	int cx_cac = x_cac + params.offset_x;
+	int cy_cac = y_cac + params.offset_y;
+
+	// 计算恐龙与半圆圆心的x和y方向上的距离
+	int dx = abs(x_dino - cx_cac);
+	int dy = abs(y_dino - cy_cac);
+
+	// 计算恐龙与半圆圆心的欧几里得距离的平方
+	int distanceSquared = dx * dx + dy * dy;
+
+	// 如果距离的平方小于等于半径的平方，并且恐龙在半圆圆心上方，则认为发生了碰撞
+	return (distanceSquared <= params.radius * params.radius) && (y_dino < cy_cac);
+}
+
+
+
+
 int main()
 {
 	srand(static_cast<unsigned int>(time(0)));//搭配rand使用，让每次随机不一样
@@ -257,12 +310,12 @@ int main()
 				{
 					dino1.StartJump();
 				}
-				else if (msg.vkcode == VK_DOWN)
+				else if (msg.vkcode == VK_DOWN)//检测键盘的下键
 				{
 					dino1.StartDuck();
 				}
 			}
-			else if (msg.message == WM_KEYUP)
+			else if (msg.message == WM_KEYUP)//如果松开下键，停止蹲的动作
 			{
 				if (msg.vkcode == VK_DOWN) dino1.StopDuck();
 			}
@@ -322,6 +375,8 @@ int main()
 		outtextxy(10, 10, scoreStr);
 		if (static_cast<int>(Score) > 50 + lastSpeedIncreaseScore)
 		{
+			//游戏难度随着分数增长而逐渐增加
+			//具体体现在速度加快，我们直接把速度改为全局变量，防止作用域出问题
 			cac_speed += speed_increase;
 			bird_speed += speed_increase;
 			lastSpeedIncreaseScore = static_cast<int>(Score);
