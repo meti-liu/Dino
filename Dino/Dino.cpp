@@ -61,9 +61,25 @@ public:
 	float x, y;
 	float vx;//相对运动，障碍物向左，这里vx应该是负的
 	int Cactype;
-	Cactus() : x(0), y(0), Cactype(1) {}//先重载构造一个无参数的Cactus，否则vector的定义会报错
-	Cactus(float x, float y, int Cactype) :x(x), y(y), Cactype(Cactype) {}//构造函数+初始化仙人掌相关数据
-	//包括其xy坐标，移动速度vx，是哪种类型的仙人掌
+
+
+	//这是碰撞检测的参数，基本上是最难的部分
+	//我们注意到恐龙的跳跃或者说它与仙人掌碰撞的临界坐标近似可以模拟成一个抛物线
+	//我们用半圆的思路去处理碰撞，同时加上几个边界使其尽可能接近抛物线
+
+	int offset_x, offset_y;//半圆圆心相对于cactus坐标的偏移量，这是图片左右不对称导致的
+	int radius;//半圆半径
+	int leftBoundOffset;  // 左侧限制边界的偏移
+	int rightBoundOffset; // 右侧限制边界的偏移
+	int upperBoundOffset; // 上方限制边界的偏移
+	Cactus() : x(0), y(0), Cactype(1), offset_x(0), offset_y(0), radius(0), leftBoundOffset(0), rightBoundOffset(0), upperBoundOffset(0) {}
+	//先重载构造一个无参数的Cactus，否则vector的定义会报错
+	Cactus(float x, float y, int Cactype, int ox, int oy, int r, int lbo, int rbo, int ubo)
+		: x(x), y(y), Cactype(Cactype), offset_x(ox), offset_y(oy), radius(r), leftBoundOffset(lbo), rightBoundOffset(rbo), upperBoundOffset(ubo) {}
+	//构造函数+初始化仙人掌相关数据
+	//包括其xy坐标，是哪种类型的仙人掌
+	//每个类型仙人掌有不同的边界框（半圆，抛物线）
+
 	void draw()
 	{
 		switch (Cactype)
@@ -71,14 +87,38 @@ public:
 		case 1:putimage1(x, y, &img_cac1); break;
 		case 2:putimage1(x, y, &img_cac2); break;
 		case 3:putimage1(x, y, &img_cac3); break;
-		case 4:putimage1(x, y + 20, &img_cac4); break;//因为加载图片是从x，y开始向右下角加载的
-		case 5:putimage1(x, y + 20, &img_cac5); break;//所以+20是避免小仙人掌加载时悬在空中
-		case 6:putimage1(x, y + 20, &img_cac6); break;
+		case 4:putimage1(x, y , &img_cac4); break;
+		case 5:putimage1(x, y , &img_cac5); break;
+		case 6:putimage1(x, y , &img_cac6); break;
 		}
 	}
 	void move()
 	{
 		x -= cac_speed;//相对运动
+	}
+
+	bool crack(int x_dino, int y_dino) const
+		//定义碰撞函数，判断恐龙坐标是否在碰撞框内
+	{
+		int ox = x + offset_x;//ox,oy是半圆圆心坐标
+		int oy = y + offset_y;//offset是偏移量，这是图片左右不对称导致的
+		
+		int dx = abs(x_dino - ox);
+		int dy = abs(y_dino - oy);
+
+		int distanceSquared = dx * dx + dy * dy;
+
+		int leftBound = ox + leftBoundOffset;
+		int rightBound = ox + rightBoundOffset;
+		int upperBound = oy + upperBoundOffset;
+
+		return (distanceSquared <= radius * radius) &&
+			(x_dino > leftBound) &&
+			(x_dino < rightBound) &&
+			(y_dino > upperBound) && (y_dino < oy);
+		//需要同时满足2个条件才能被判定为在碰撞区域内
+		//1.在圆内  2.未超过上下左右边界
+		//这样的碰撞区域就可模拟抛物线
 	}
 };
 
@@ -208,7 +248,35 @@ void AddCac()
 		cout << "Current interval: " << Cac_interval << " milliseconds" << endl;
 
 		int Cactype = rand() % 6 + 1;//随机数，六种仙人掌任选一个生成
-		cactus.push_back(Cactus(width, height - 240, Cactype));
+
+		switch (Cactype) 
+		{
+		case 1:
+			cactus.push_back(Cactus(width, height - 240, Cactype, -15, 2, 65, -65, 65, -65));
+			break;
+		case 2:
+			cactus.push_back(Cactus(width, height - 240, Cactype, k,k,k,k,k,k));
+			break;
+		case 3:
+			cactus.push_back(Cactus(width, height - 240, Cactype, k, k, k, k, k, k));
+			break;
+			//因为加载图片是从x，y开始向右下角加载的,所以 + 20是避免小仙人掌加载时悬在空中
+		case 4:
+			cactus.push_back(Cactus(width, height - 220, Cactype, k, k, k, k, k, k));
+			break;
+		case 5:
+			cactus.push_back(Cactus(width, height - 220, Cactype, k, k, k, k, k, k));
+			break;
+		case 6:
+			cactus.push_back(Cactus(width, height - 220, Cactype, k, k, k, k, k, k));
+			break;
+			
+		}
+
+
+
+
+
 		lastcactime = currenttime;
 	}
 }
@@ -230,54 +298,6 @@ void AddBird()
 		lastbirdtime = currenttime;
 	}
 }
-
-
-//这是碰撞检测，基本上是最难的部分
-//我们注意到恐龙的跳跃或者说它与仙人掌碰撞的临界坐标近似可以模拟成一个半圆
-//我们用半圆的思路去处理碰撞
-bool isCollidingWithCactus(int x_dino, int y_dino, int x_cac, int y_cac, int Cactype) {
-	// 定义不同仙人掌类型对应的半圆参数
-	struct SemiCircleParams 
-	{
-		int offset_x;
-		int offset_y;
-		int radius;
-	};
-
-	//6个仙人掌尺寸不同，因此碰撞参数不同
-	//dino与每一个仙人掌的碰撞参数都是不同的
-
-	map<int, SemiCircleParams> cactusParams = 
-	{
-		{1, {-15, 2, 65}}, // 为cac1碰撞半圆定义参数
-		{2, {10,2,85}},      // 为cac2碰撞半圆定义参数
-		{3, {10,2,85}},      
-		{4, {10,2,85}},      
-		{5, {10,2,85}},      
-		{6, {10,2,85}},      
-
-		// 以此类推，为其他仙人掌定义参数
-	};
-
-	// 获取当前仙人掌的半圆参数
-	SemiCircleParams params = cactusParams[Cactype];
-
-	// 计算半圆圆心的实际坐标
-	int cx_cac = x_cac + params.offset_x;
-	int cy_cac = y_cac + params.offset_y;
-
-	// 计算恐龙与半圆圆心的x和y方向上的距离
-	int dx = abs(x_dino - cx_cac);
-	int dy = abs(y_dino - cy_cac);
-
-	// 计算恐龙与半圆圆心的欧几里得距离的平方
-	int distanceSquared = dx * dx + dy * dy;
-
-	// 如果距离的平方小于等于半径的平方，并且恐龙在半圆圆心上方，则认为发生了碰撞
-	return (distanceSquared <= params.radius * params.radius) && (y_dino < cy_cac);
-}
-
-
 
 
 int main()
@@ -387,6 +407,11 @@ int main()
 		{
 			c.draw();
 			c.move();
+			if (c.crack(dino1.x, dino1.y))
+			{
+				End = true;//仙人掌碰撞，下面的鸟同理
+				break;
+			}
 		}
 		for (auto& b : bird)
 		{
