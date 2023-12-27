@@ -308,7 +308,7 @@ int main()
 	ExMessage msg;//
 	startup();
 	initgraph(width, height);//≈‹ø·¥∞ø⁄
-	mciSendString(L"play music/Summer.mp3 repeat", 0, 0, 0);//≤•∑≈“Ù¿÷
+	mciSendString(L"play D:/game/lbr/Dino/music/Summer.mp3 repeat", 0, 0, 0);//≤•∑≈“Ù¿÷
 	//mciSendString(_T("play bgm repeat from 0"), NULL, 0, NULL);//—≠ª∑≤•∑≈
 
 	BeginBatchDraw();//À´ª∫≥Â
