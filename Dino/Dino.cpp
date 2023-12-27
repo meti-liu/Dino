@@ -34,7 +34,8 @@ IMAGE img_dinojump, img_ducking1, img_ducking2;//跳跃恐龙，空中脚不动
 IMAGE img_background;
 IMAGE img_cac1, img_cac2, img_cac3, img_cac4, img_cac5, img_cac6;//六张不同的仙人掌图片
 IMAGE img_bird1, img_bird2;
-bool End = false;//撞到仙人掌或鸟，game over
+//bool End = false;//撞到仙人掌或鸟，game over
+int Life = 3;//撞到仙人掌或鸟，血量-1
 int dino_index;//有两张恐龙图片，循环播放，这里记录下标
 int bird_index;//实现鸟的翅膀扇动，循环播放
 //to be done
@@ -108,9 +109,9 @@ public:
 
 		int distanceSquared = dx * dx + dy * dy;
 
-		int leftBound = ox + leftBoundOffset;
+		int leftBound = ox - leftBoundOffset;
 		int rightBound = ox + rightBoundOffset;
-		int upperBound = oy + upperBoundOffset;
+		int upperBound = oy - upperBoundOffset;
 
 		return (distanceSquared <= radius * radius) &&
 			(x_dino > leftBound) &&
@@ -249,26 +250,26 @@ void AddCac()
 
 		int Cactype = rand() % 6 + 1;//随机数，六种仙人掌任选一个生成
 
-		switch (Cactype) 
+		switch (Cactype) //这些参数是在另外一个测试代码中一点点调试出来的，调试了两三个小时
 		{
 		case 1:
-			cactus.push_back(Cactus(width, height - 240, Cactype, -15, 2, 65, -65, 65, -65));
+			cactus.push_back(Cactus(width, height - 240, Cactype, -12, 2, 70, 60, 65, 70));
 			break;
 		case 2:
-			cactus.push_back(Cactus(width, height - 240, Cactype, k,k,k,k,k,k));
+			cactus.push_back(Cactus(width, height - 240, Cactype,10,2,90,90,90,85));
 			break;
 		case 3:
-			cactus.push_back(Cactus(width, height - 240, Cactype, k, k, k, k, k, k));
+			cactus.push_back(Cactus(width, height - 240, Cactype, 10, 2, 88,88, 88, 80));
 			break;
 			//因为加载图片是从x，y开始向右下角加载的,所以 + 20是避免小仙人掌加载时悬在空中
 		case 4:
-			cactus.push_back(Cactus(width, height - 220, Cactype, k, k, k, k, k, k));
+			cactus.push_back(Cactus(width, height - 220, Cactype, -5, 2, 70, 70, 50, 70));
 			break;
 		case 5:
-			cactus.push_back(Cactus(width, height - 220, Cactype, k, k, k, k, k, k));
+			cactus.push_back(Cactus(width, height - 220, Cactype, -2, 2, 78, 67, 67, 78));
 			break;
 		case 6:
-			cactus.push_back(Cactus(width, height - 220, Cactype, k, k, k, k, k, k));
+			cactus.push_back(Cactus(width, height - 220, Cactype, 15, 2, 85, 85, 85, 80));
 			break;
 			
 		}
@@ -313,7 +314,7 @@ int main()
 	BeginBatchDraw();//双缓冲
 	Dino dino1(200, height - 240, 0, 3.5);
 
-	while (true)//后续改为！End
+	while (Life>0)//后续改为！End
 	{
 
 
@@ -393,6 +394,13 @@ int main()
 		TCHAR scoreStr[20];
 		_stprintf_s(scoreStr, _T("得分: %d"), static_cast<int>(Score));
 		outtextxy(10, 10, scoreStr);
+
+		settextcolor(GREEN);
+		settextstyle(25, 0, _T("宋体"));
+		TCHAR lifeStr[20];
+		_stprintf_s(lifeStr, _T("血量: %d"), static_cast<int>(Life));
+		outtextxy(width-100, 10, lifeStr);
+
 		if (static_cast<int>(Score) > 50 + lastSpeedIncreaseScore)
 		{
 			//游戏难度随着分数增长而逐渐增加
@@ -409,7 +417,7 @@ int main()
 			c.move();
 			if (c.crack(dino1.x, dino1.y))
 			{
-				End = true;//仙人掌碰撞，下面的鸟同理
+				Life--;//仙人掌碰撞，下面的鸟同理
 				break;
 			}
 		}
