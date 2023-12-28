@@ -1,3 +1,4 @@
+
 #include<graphics.h>
 #include<iostream>
 #include<conio.h>
@@ -33,9 +34,9 @@ IMAGE img_dinojump, img_ducking1, img_ducking2;//跳跃恐龙，空中脚不动
 //蹲下恐龙，脚会动
 IMAGE img_background;
 IMAGE img_cac1, img_cac2, img_cac3, img_cac4, img_cac5, img_cac6;//六张不同的仙人掌图片
-IMAGE img_bird1, img_bird2;
-bool End = false;//撞到仙人掌或鸟，game over
-//int Life = 3;//撞到仙人掌或鸟，血量-1
+IMAGE img_bird1, img_bird2, img_shield, img_gameover;
+//bool End = false;//撞到仙人掌或鸟，game over
+int Life = 3;//撞到仙人掌或鸟，血量-1
 int dino_index;//有两张恐龙图片，循环播放，这里记录下标
 int bird_index;//实现鸟的翅膀扇动，循环播放
 //to be done
@@ -129,8 +130,16 @@ public:
 	float x, y;
 	float vx;
 	int Birdtype;//高鸟和低鸟
-	Bird() :x(0), Birdtype(1) {}
-	Bird(float x, int Birdtype) :x(x), Birdtype(Birdtype) {}
+
+	int offset_x, offset_y;//半圆圆心相对于cactus坐标的偏移量，这是图片左右不对称导致的
+	int radius;//半圆半径
+	int leftBoundOffset;  // 左侧限制边界的偏移
+	int rightBoundOffset; // 右侧限制边界的偏移
+	int upperBoundOffset; // 上方限制边界的偏移
+	int downBoundOffset; // 下方限制边界的偏移
+
+	Bird() :x(0), Birdtype(1), offset_x(0), offset_y(0), radius(0), leftBoundOffset(0), rightBoundOffset(0), upperBoundOffset(0), downBoundOffset(0) {}
+	Bird(float x, int Birdtype, int ox, int oy, int r, int lbo, int rbo, int ubo, int dbo) :x(x), Birdtype(Birdtype), offset_x(ox), offset_y(oy), radius(r), leftBoundOffset(lbo), rightBoundOffset(rbo), upperBoundOffset(ubo), downBoundOffset(dbo) {}
 	void draw()
 	{
 		if (Birdtype == 1) y = height - 280;
@@ -142,6 +151,31 @@ public:
 	{
 		x -= bird_speed;//相对运动，让障碍物向左运动
 		//看上去就像恐龙在向右运动
+	}
+	bool crack(int x_dino, int y_dino) const
+		//定义碰撞函数，判断恐龙坐标是否在碰撞框内
+	{
+		int ox = x + offset_x;//ox,oy是半圆圆心坐标
+		int oy = y + offset_y;//offset是偏移量，这是图片左右不对称导致的
+
+		int dx = abs(x_dino - ox);
+		int dy = abs(y_dino - oy);
+
+		int distanceSquared = dx * dx + dy * dy;
+
+		int leftBound = ox - leftBoundOffset;
+		int rightBound = ox + rightBoundOffset;
+		int upperBound = oy - upperBoundOffset;
+		int downBound = oy + downBoundOffset;
+
+
+		return (distanceSquared <= radius * radius) &&
+			(x_dino > leftBound) &&
+			(x_dino < rightBound) &&
+			(y_dino > upperBound) && (y_dino < downBound);
+		//需要同时满足2个条件才能被判定为在碰撞区域内
+		//1.在圆内  2.未超过上下左右边界
+		//这样的碰撞区域就可模拟抛物线
 	}
 };
 
@@ -155,9 +189,15 @@ public:
 	float vy, g;
 	bool Jumping = false;//检测是否在跳跃
 	bool Ducking = false;//检测是否在俯下身子或空中俯冲
+	bool Invincible = false;//掉血一段时间处于无敌状态，避免重复判定掉血
+	float ivtimer;//用于计时
 	Dino(float x, float y, float vy, float g) :x(x), y(y), vy(vy), g(g) {}//构造函数，数据初始化
 	void draw()
 	{
+		if (Invincible)
+		{
+			putimage1(x + 5, y - 60, &img_shield);
+		}
 		if (Jumping) putimage1(x, y, &img_dinojump);
 		else if (Ducking)
 		{
@@ -208,6 +248,14 @@ public:
 	{
 		Ducking = false;
 	}
+	void updateInvincible()//无敌帧逻辑的实现
+	{
+		if (Invincible == true)
+		{
+			ivtimer -= 0.03;
+			if (ivtimer <= 0) Invincible = false;
+		}
+	}
 };
 
 //初始化：加载图片
@@ -227,6 +275,10 @@ void startup()
 	loadimage(&img_cac6, _T("D:/game/lbr/Dino/img/SmallCactus3.png"));
 	loadimage(&img_bird1, _T("D:/game/lbr/Dino/img/Bird1.png"));
 	loadimage(&img_bird2, _T("D:/game/lbr/Dino/img/Bird2.png"));
+	loadimage(&img_shield, _T("D:/game/lbr/Dino/img/shield.png"));
+	loadimage(&img_gameover, _T("D:/game/lbr/Dino/img/gameover.png"));
+
+
 
 
 }
@@ -295,10 +347,33 @@ void AddBird()
 		cout << "Current interval: " << Bird_interval << " milliseconds" << endl;
 
 		int Birdtype = rand() % 2 + 1;//随机数，高鸟和矮鸟
-		bird.push_back(Bird(width, Birdtype));
+
+		switch (Birdtype) //这些参数是在另外一个测试代码中一点点调试出来的，调试了三个小时
+		{
+		case 1:
+			bird.push_back(Bird(width, Birdtype, 8, 11, 93, 93, 80, 93, 63));
+			break;
+		case 2:
+			bird.push_back(Bird(width, Birdtype, 8, 11, 93, 93, 80, 93, 63));
+			break;
+		}
+
+
 		lastbirdtime = currenttime;
 	}
 }
+
+void DrawEnd()
+{
+
+	putimage1(width / 2 - 180, height / 2 - 50, &img_gameover);
+
+
+	FlushBatchDraw();
+	Sleep(3000); // 显示结束画面几秒钟
+
+}
+
 
 
 int main()
@@ -314,13 +389,13 @@ int main()
 	BeginBatchDraw();//双缓冲
 	Dino dino1(200, height - 240, 0, 3.5);
 
-	while (!End)//后续改为！End
+	while (Life >= 0)//后续改为！End
 	{
-		/*if (Life == 0)
+		if (Life == 0)
 		{
 			DrawEnd();
 			break;
-		}*/
+		}
 
 
 		AddCac();
@@ -399,11 +474,11 @@ int main()
 		_stprintf_s(scoreStr, _T("得分: %d"), static_cast<int>(Score));
 		outtextxy(10, 10, scoreStr);
 
-		/*settextcolor(GREEN);
+		settextcolor(GREEN);
 		settextstyle(25, 0, _T("宋体"));
 		TCHAR lifeStr[20];
 		_stprintf_s(lifeStr, _T("血量: %d"), static_cast<int>(Life));
-		outtextxy(width-100, 10, lifeStr);*/
+		outtextxy(width - 100, 10, lifeStr);
 
 		if (static_cast<int>(Score) > 50 + lastSpeedIncreaseScore)
 		{
@@ -415,13 +490,16 @@ int main()
 		}
 		dino1.draw();
 		dino1.jump();
+		dino1.updateInvincible();
 		for (auto& c : cactus)//一种新的for循环，用于遍历vector这类的动态数组
 		{
 			c.draw();
 			c.move();
-			if (c.crack(dino1.x, dino1.y))
+			if (c.crack(dino1.x, dino1.y) && dino1.Invincible == false)//碰撞与无敌帧的判定
 			{
-				End = true;//仙人掌碰撞，下面的鸟同理
+				Life--;//仙人掌碰撞，下面的鸟同理
+				dino1.Invincible = true;
+				dino1.ivtimer = 2.0;
 				break;
 			}
 		}
@@ -429,8 +507,16 @@ int main()
 		{
 			b.draw();
 			b.move();
+			if (b.crack(dino1.x, dino1.y) && dino1.Invincible == false && dino1.Ducking == false)//碰撞与无敌帧的判定
+				//如果蹲下则绝对不会和鸟发生碰撞
+			{
+				Life--;//仙人掌碰撞，下面的鸟同理
+				dino1.Invincible = true;
+				dino1.ivtimer = 2.0;//无敌时间
+				break;
+			}
 		}
-		FlushBatchDraw();
+		FlushBatchDraw();//双缓冲
 		Sleep(30);
 	}
 	EndBatchDraw();
