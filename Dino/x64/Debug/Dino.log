@@ -1,2 +1,40 @@
-﻿  LINK : 没有找到 C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\x64\Debug\Dino.exe 或上一个增量链接没有生成它；正在执行完全链接
+﻿  Dino.cpp
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(23,27): warning C4305: “初始化”: 从“double”到“float”截断
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(88,23): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(88,20): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(89,23): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(89,20): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(90,23): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(90,20): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(91,23): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(91,20): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(92,23): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(92,20): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(93,23): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(93,20): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(104,10): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(105,10): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(146,37): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(146,34): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(147,37): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(147,34): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(157,10): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(158,10): warning C4244: “初始化”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(198,20): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(198,15): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(200,29): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(200,26): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(203,40): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(203,35): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(204,40): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(204,35): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(209,38): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(209,35): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(210,38): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(210,35): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(254,1): warning C4305: “-=”: 从“double”到“float”截断
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(497,30): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(497,21): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(509,30): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
+C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\Dino\Dino.cpp(509,21): warning C4244: “参数”: 从“float”转换到“int”，可能丢失数据
   Dino.vcxproj -> C:\Users\刘博瑞\OneDrive\桌面\大作业\Dino\Dino\x64\Debug\Dino.exe
